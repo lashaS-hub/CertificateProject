@@ -137,13 +137,14 @@ public class PlayerController : MonoBehaviour
     {
         cameraShouldRotate = false;
     }
-
+    int count = 0;
     private void AttackPerformed(CallbackContext value)
     {
         var curTime = Time.time;
         if (curTime - prevShootTime > attackSpeed)
         {
             isAttacking = true;
+            Debug.Log(++count);
             StartCoroutine(Attack());
             prevShootTime = curTime;
         }
@@ -197,10 +198,10 @@ public class PlayerController : MonoBehaviour
             moveDirection *= moveSpeed;
         }
 
-        characterController.Move(moveDirection * Time.deltaTime);
+        // characterController.Move(moveDirection * Time.deltaTime);
 
         velocity.y += gravity * Time.deltaTime;
-        characterController.Move(velocity * Time.deltaTime);
+        characterController.Move((moveDirection + velocity) * Time.deltaTime);
     }
 
     private void Idle()
@@ -228,18 +229,18 @@ public class PlayerController : MonoBehaviour
     private void Die()
     {
         isDied = true;
-        // _animator.SetTrigger("Die");
+        _animator.SetTrigger("Death");
         Debug.Log("die");
     }
 
     private IEnumerator Attack()
     {
-        var attackLayerIndex = _animator.GetLayerIndex("Attack Layer");
-        _animator.SetLayerWeight(attackLayerIndex, 1);
+        // var attackLayerIndex = _animator.GetLayerIndex("Attack Layer");
+        // _animator.SetLayerWeight(attackLayerIndex, 1);
         _animator.SetTrigger("Attack");
 
         yield return new WaitForSeconds(1.5f);
-        _animator.SetLayerWeight(attackLayerIndex, 0);
+        // _animator.SetLayerWeight(attackLayerIndex, 0);
 
     }
 

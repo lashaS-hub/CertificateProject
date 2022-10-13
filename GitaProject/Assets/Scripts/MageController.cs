@@ -15,6 +15,7 @@ public class MageController : MonoBehaviour
     private Animator _animator;
 
     private float prevShootTime = 0;
+    private bool isDead = false;
 
 
     void Start()
@@ -29,6 +30,7 @@ public class MageController : MonoBehaviour
 
     void Update()
     {
+        if (isDead) return;
         CheckPlayer();
     }
 
@@ -72,5 +74,11 @@ public class MageController : MonoBehaviour
 
         spell.Shoot(player.GetPlayerCenter(), spellSpeed, damage);
         spell.DestroyOverTime(2);
+    }
+
+    public void Die()
+    {
+        _animator.SetTrigger("Death");
+        isDead = true;
     }
 }
