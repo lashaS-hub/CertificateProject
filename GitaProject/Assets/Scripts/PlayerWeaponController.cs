@@ -4,6 +4,23 @@ using UnityEngine;
 
 public class PlayerWeaponController : MonoBehaviour
 {
+    private Collider _collider;
+
+    private void Start()
+    {
+        _collider = GetComponent<Collider>();
+    }
+
+    public void AttackStarted()
+    {
+        _collider.enabled = true;
+    }
+
+    public void AttackFinished()
+    {
+        _collider.enabled = false;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Enemy")

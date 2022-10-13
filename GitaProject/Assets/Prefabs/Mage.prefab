@@ -100,7 +100,7 @@ MonoBehaviour:
   attackRange: 10
   spellSpeed: 5
   attackSpeed: 5
-  damage: 0
+  damage: 5
 --- !u!65 &6053316252615228873
 BoxCollider:
   m_ObjectHideFlags: 0

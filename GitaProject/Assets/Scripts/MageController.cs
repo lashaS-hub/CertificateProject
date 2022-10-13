@@ -78,6 +78,7 @@ public class MageController : MonoBehaviour
 
     public void Die()
     {
+        if (isDead) return;
         _animator.SetTrigger("Death");
         isDead = true;
     }

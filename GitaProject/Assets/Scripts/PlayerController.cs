@@ -9,6 +9,7 @@ using static UnityEngine.InputSystem.InputAction;
 
 public class PlayerController : MonoBehaviour
 {
+    [SerializeField] private PlayerWeaponController weapon;
     [Header("Variables")]
     [SerializeField] private Transform playerCenter;
     [SerializeField] private int maxHealth;
@@ -145,13 +146,15 @@ public class PlayerController : MonoBehaviour
         {
             isAttacking = true;
             Debug.Log(++count);
-            StartCoroutine(Attack());
+            weapon.AttackStarted();
+            Attack();
             prevShootTime = curTime;
         }
     }
 
     private void AttackCanceled(CallbackContext value)
     {
+        weapon.AttackFinished();
         isAttacking = false;
     }
 
@@ -182,15 +185,23 @@ public class PlayerController : MonoBehaviour
 
         if (isGrounded)
         {
-            if (moveButtonHeld && !shiftButtonHeld && !isAttacking)
+            if (moveVec.y == -1 && !shiftButtonHeld)
+            {
+                WalkBackward();
+            }
+            else if (moveVec.y == -1 && shiftButtonHeld)
+            {
+                RunBackward();
+            }
+            else if (moveVec.y == 1 && !shiftButtonHeld)
             {
                 Walk();
             }
-            else if (moveButtonHeld && shiftButtonHeld && !isAttacking)
+            else if (moveVec.y == 1 && shiftButtonHeld)
             {
                 Run();
             }
-            else
+            else if (moveVec.y == 0)
             {
                 Idle();
             }
@@ -198,26 +209,39 @@ public class PlayerController : MonoBehaviour
             moveDirection *= moveSpeed;
         }
 
-        // characterController.Move(moveDirection * Time.deltaTime);
+        characterController.Move(moveDirection * Time.deltaTime);
 
         velocity.y += gravity * Time.deltaTime;
-        characterController.Move((moveDirection + velocity) * Time.deltaTime);
+        characterController.Move(velocity * Time.deltaTime);
     }
 
-    private void Idle()
+    private void RunBackward()
     {
-        _animator.SetFloat("Speed", 0, .1f, Time.deltaTime);
+        _animator.SetFloat("Speed", 0f, .05f, Time.deltaTime);
+        moveSpeed = runSpeed;
+    }
+
+    private void WalkBackward()
+    {
+        _animator.SetFloat("Speed", .25f, .05f, Time.deltaTime);
+        moveSpeed = walkSpeed;
     }
 
     private void Walk()
     {
-        _animator.SetFloat("Speed", .5f, .1f, Time.deltaTime);
+        _animator.SetFloat("Speed", .75f, .05f, Time.deltaTime);
         moveSpeed = walkSpeed;
     }
 
+    private void Idle()
+    {
+        _animator.SetFloat("Speed", .5f, .05f, Time.deltaTime);
+    }
+
+
     private void Run()
     {
-        _animator.SetFloat("Speed", 1f, .1f, Time.deltaTime);
+        _animator.SetFloat("Speed", 1f, .05f, Time.deltaTime);
         moveSpeed = runSpeed;
     }
 
@@ -233,15 +257,9 @@ public class PlayerController : MonoBehaviour
         Debug.Log("die");
     }
 
-    private IEnumerator Attack()
+    private void Attack()
     {
-        // var attackLayerIndex = _animator.GetLayerIndex("Attack Layer");
-        // _animator.SetLayerWeight(attackLayerIndex, 1);
         _animator.SetTrigger("Attack");
-
-        yield return new WaitForSeconds(1.5f);
-        // _animator.SetLayerWeight(attackLayerIndex, 0);
-
     }
 
     public void GetDamaged(int damage)
