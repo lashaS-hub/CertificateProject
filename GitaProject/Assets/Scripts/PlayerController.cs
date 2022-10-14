@@ -27,6 +27,7 @@ public class PlayerController : MonoBehaviour
     [Header("Camera")]
     [SerializeField] private float mouseSensitivity;
     [Header("UI")]
+    [SerializeField] private TMP_Text respawnLeft;
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private Slider healthSlider;
 
@@ -37,6 +38,7 @@ public class PlayerController : MonoBehaviour
     private CharacterController characterController;
     private Rigidbody _rigidbody;
     private Animator _animator;
+    private Camera _camera;
 
     #endregion
 
@@ -53,7 +55,6 @@ public class PlayerController : MonoBehaviour
     private bool moveButtonHeld = false;
     private bool shiftButtonHeld = false;
     private bool cameraShouldRotate = false;
-    private bool isAttacking = false;
 
 
     #endregion
@@ -77,14 +78,15 @@ public class PlayerController : MonoBehaviour
         playerInput.Player.Look.canceled += LookCanceled;
 
         playerInput.Player.Fire.performed += AttackPerformed;
-        playerInput.Player.Fire.canceled += AttackCanceled;
 
 
     }
 
     void Start()
     {
+        _camera = Camera.main;
         health = maxHealth;
+        respawnLeft.text = GameManager.Singleton.LivesLeft.ToString();
 
         UpdateHealth();
 
@@ -141,10 +143,10 @@ public class PlayerController : MonoBehaviour
     int count = 0;
     private void AttackPerformed(CallbackContext value)
     {
+        if (isDied) return;
         var curTime = Time.time;
         if (curTime - prevShootTime > attackSpeed)
         {
-            isAttacking = true;
             Debug.Log(++count);
             weapon.AttackStarted();
             Attack();
@@ -152,14 +154,21 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void AttackCanceled(CallbackContext value)
+
+    private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        weapon.AttackFinished();
-        isAttacking = false;
+        // isGrounded = false;
+        if (hit.transform.tag == "Ground")
+        {
+            // isGrounded = true;
+            transform.SetParent(hit.transform);
+        }
     }
+
 
     void Update()
     {
+        // Debug.Log(velocity);
         if (isDied) return;
         Move();
         CameraRotate();
@@ -171,9 +180,17 @@ public class PlayerController : MonoBehaviour
         transform.Rotate(Vector3.up * cameraRotateVec.x * mouseSensitivity * Time.deltaTime);
     }
 
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        // Gizmos.DrawSphere(transform.position, groundCheckDistance);
+        Gizmos.DrawSphere(transform.position, groundCheckDistance);
+    }
+
     private void Move()
     {
         isGrounded = Physics.CheckSphere(transform.position, groundCheckDistance, groundMask);
+
 
         if (isGrounded && velocity.y < 0)
         {
@@ -185,6 +202,8 @@ public class PlayerController : MonoBehaviour
 
         if (isGrounded)
         {
+            _animator.SetBool("IsJumping", false);
+            Debug.Log("ISGROUNDED");
             if (moveVec.y == -1 && !shiftButtonHeld)
             {
                 WalkBackward();
@@ -208,10 +227,16 @@ public class PlayerController : MonoBehaviour
 
             moveDirection *= moveSpeed;
         }
+        else
+        {
+            Idle();
+        }
 
-        characterController.Move(moveDirection * Time.deltaTime);
+        // characterController.Move(moveDirection * Time.deltaTime);
 
         velocity.y += gravity * Time.deltaTime;
+        velocity.x = moveDirection.x;
+        velocity.z = moveDirection.z;
         characterController.Move(velocity * Time.deltaTime);
     }
 
@@ -248,11 +273,35 @@ public class PlayerController : MonoBehaviour
     private void Jump()
     {
         velocity.y = Mathf.Sqrt(jumpHeight * -2 * gravity);
+        _animator.SetBool("IsJumping", true);
+        StartCoroutine(JumpAnimationAgain());
+        // _animator.SetTrigger("Jump");
+    }
+
+    private IEnumerator JumpAnimationAgain()
+    {
+        yield return new WaitForSeconds(.1f);
+        _animator.SetBool("IsJumping", true);
+    }
+
+    public void RestrictMovementWithFakeDeath()
+    {
+        _animator.SetFloat("Speed", .5f);
+        isDied = true;
     }
 
     private void Die()
     {
         isDied = true;
+        var isGameEnded = GameManager.Singleton.FinishRound();
+        if (isGameEnded)
+        {
+            UIController.Singleton.InitFinishDialog("You Lost", "Game over");
+        }
+        else
+        {
+            UIController.Singleton.InitFinishDialog("You Died, try again", "Retry");
+        }
         _animator.SetTrigger("Death");
         Debug.Log("die");
     }
@@ -303,5 +352,10 @@ public class PlayerController : MonoBehaviour
     public Vector3 GetPlayerCenter()
     {
         return playerCenter.position;
+    }
+
+    public void DetachCamera()
+    {
+        _camera.transform.SetParent(null);
     }
 }

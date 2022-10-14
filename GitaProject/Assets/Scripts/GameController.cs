@@ -6,10 +6,11 @@ public class GameController : MonoBehaviour
 {
     [SerializeField] private PlayerController player;
     [SerializeField] private MageController mage;
-    [SerializeField] private ArcherController archer;
+    [SerializeField] private MageController archer;
 
     void Start()
     {
         mage.SetPlayer(player);
+        archer.SetPlayer(player);
     }
 }

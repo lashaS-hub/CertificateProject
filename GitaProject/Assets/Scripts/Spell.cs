@@ -16,7 +16,7 @@ public class Spell : MonoBehaviour
 
     public void DestroyOverTime(float time)
     {
-        Destroy(this, time);
+        Destroy(this.gameObject, time);
     }
 
 

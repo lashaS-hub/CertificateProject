@@ -68,17 +68,19 @@ public class MageController : MonoBehaviour
     private void Shoot()
     {
         _animator.SetTrigger("Attack");
-
-        var spellObject = Instantiate(spellPrefab, handTransform.position, Quaternion.identity);
+        var playerCenter = player.GetPlayerCenter();
+        var arrowRotation = Quaternion.Euler(playerCenter - transform.position);
+        var spellObject = Instantiate(spellPrefab, handTransform.position, arrowRotation);
         var spell = spellObject.GetComponent<Spell>();
 
-        spell.Shoot(player.GetPlayerCenter(), spellSpeed, damage);
+        spell.Shoot(playerCenter, spellSpeed, damage);
         spell.DestroyOverTime(2);
     }
 
     public void Die()
     {
         if (isDead) return;
+        GetComponent<Collider>().enabled = false;
         _animator.SetTrigger("Death");
         isDead = true;
     }

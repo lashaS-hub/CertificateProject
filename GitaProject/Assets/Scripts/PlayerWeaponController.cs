@@ -16,6 +16,12 @@ public class PlayerWeaponController : MonoBehaviour
         _collider.enabled = true;
     }
 
+    private IEnumerator DelayAttackFinish()
+    {
+        yield return new WaitForSeconds(1f);
+        AttackFinished();
+    }
+
     public void AttackFinished()
     {
         _collider.enabled = false;
