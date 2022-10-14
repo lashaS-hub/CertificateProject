@@ -2905,6 +2905,10 @@ PrefabInstance:
       propertyPath: healthSlider
       value: 
       objectReference: {fileID: 1737687396}
+    - target: {fileID: 1494402737948204390, guid: 3285eb0413845564cb6c99e2cb8ba4c4, type: 3}
+      propertyPath: groundCheckDistance
+      value: 0.01
+      objectReference: {fileID: 0}
     - target: {fileID: 1494402737948204391, guid: 3285eb0413845564cb6c99e2cb8ba4c4, type: 3}
       propertyPath: m_RootOrder
       value: 1

@@ -229,6 +229,8 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
+            moveDirection *= runSpeed;
+
             Idle();
         }
 
@@ -272,6 +274,7 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
+        moveSpeed = walkSpeed;
         velocity.y = Mathf.Sqrt(jumpHeight * -2 * gravity);
         _animator.SetBool("IsJumping", true);
         StartCoroutine(JumpAnimationAgain());
@@ -281,6 +284,7 @@ public class PlayerController : MonoBehaviour
     private IEnumerator JumpAnimationAgain()
     {
         yield return new WaitForSeconds(.1f);
+        moveSpeed = walkSpeed;
         _animator.SetBool("IsJumping", true);
     }
 
