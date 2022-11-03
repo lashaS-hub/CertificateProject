@@ -8,16 +8,11 @@ public class FallFinisher : MonoBehaviour
     {
         if (other.tag == "Player")
         {
-            other.GetComponent<PlayerController>().DetachCamera();
-            var isGameEnded = GameManager.Singleton.FinishRound();
-            if (isGameEnded)
-            {
-                UIController.Singleton.InitFinishDialog("You Lost", "Game over");
-            }
-            else
-            {
-                UIController.Singleton.InitFinishDialog("You Died, try again", "Retry");
-            }
+            var player = other.GetComponent<PlayerController>();
+            player.DetachCamera();
+            player.RestrictMovementWithFakeDeath();
+    {
+    }
         }
     }
 }

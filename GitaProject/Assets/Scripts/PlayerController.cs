@@ -12,11 +12,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerWeaponController weapon;
     [Header("Variables")]
     [SerializeField] private Transform playerCenter;
+
     [SerializeField] private int maxHealth;
+    [SerializeField] private float attackSpeed;
+
+
     [SerializeField] private float moveSpeed;
     [SerializeField] private float walkSpeed;
     [SerializeField] private float runSpeed;
-    [SerializeField] private float attackSpeed;
+
+
+
     [Space]
     [SerializeField] private bool isGrounded;
     [SerializeField] private float groundCheckDistance;
@@ -26,9 +32,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpHeight;
     [Header("Camera")]
     [SerializeField] private float mouseSensitivity;
+    [SerializeField] private float keyboardRotationSensitivity;
     [Header("UI")]
-    [SerializeField] private TMP_Text respawnLeft;
     [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private TMP_Text healthText;
     [SerializeField] private Slider healthSlider;
 
 
@@ -44,7 +51,8 @@ public class PlayerController : MonoBehaviour
 
     #region Variables
 
-    private Vector2 moveVec;
+    private Vector2 InputMoveVec;
+    private Vector2 ModifiedMoveVec;
     private Vector2 cameraRotateVec;
     private Vector3 moveDirection;
     private Vector3 velocity;
@@ -52,10 +60,11 @@ public class PlayerController : MonoBehaviour
     private int score;
     private float prevShootTime = 0;
     private bool isDied = false;
-    private bool moveButtonHeld = false;
     private bool shiftButtonHeld = false;
     private bool cameraShouldRotate = false;
 
+
+    private const float RUN_ANIMATION_MODIFIER = 2;
 
     #endregion
 
@@ -86,7 +95,6 @@ public class PlayerController : MonoBehaviour
     {
         _camera = Camera.main;
         health = maxHealth;
-        respawnLeft.text = GameManager.Singleton.LivesLeft.ToString();
 
         UpdateHealth();
 
@@ -105,14 +113,14 @@ public class PlayerController : MonoBehaviour
 
     private void MovePerformed(CallbackContext context)
     {
-        moveVec = context.ReadValue<Vector2>();
-        moveButtonHeld = true;
+        InputMoveVec = context.ReadValue<Vector2>();
+
     }
 
     private void MoveCanceled(CallbackContext context)
     {
-        moveVec = context.ReadValue<Vector2>();
-        moveButtonHeld = false;
+        InputMoveVec = context.ReadValue<Vector2>();
+
     }
 
     private void RunPerformed(CallbackContext context)
@@ -168,17 +176,20 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // Debug.Log(velocity);
+
+        Debug.Log(InputMoveVec);
         if (isDied) return;
         Move();
-        CameraRotate();
+        CameraRotateWithMouse();
     }
 
-    private void CameraRotate()
+    private void CameraRotateWithMouse()
     {
         if (!cameraShouldRotate) return;
         transform.Rotate(Vector3.up * cameraRotateVec.x * mouseSensitivity * Time.deltaTime);
     }
+
+
 
     private void OnDrawGizmos()
     {
@@ -186,6 +197,9 @@ public class PlayerController : MonoBehaviour
         // Gizmos.DrawSphere(transform.position, groundCheckDistance);
         Gizmos.DrawSphere(transform.position, groundCheckDistance);
     }
+
+    float animationVelocity_X;
+    float animationVelocity_Z;
 
     private void Move()
     {
@@ -197,55 +211,42 @@ public class PlayerController : MonoBehaviour
             velocity.y = -2f;
         }
 
-        moveDirection = new Vector3(0, 0, moveVec.y);
+        moveDirection = new Vector3(InputMoveVec.x, 0, InputMoveVec.y);
         moveDirection = transform.TransformDirection(moveDirection);
 
         if (isGrounded)
         {
             _animator.SetBool("IsJumping", false);
-            Debug.Log("ISGROUNDED");
-            if (moveVec.y == -1 && !shiftButtonHeld)
-            {
-                WalkBackward();
-            }
-            else if (moveVec.y == -1 && shiftButtonHeld)
-            {
-                RunBackward();
-            }
-            else if (moveVec.y == 1 && !shiftButtonHeld)
-            {
-                Walk();
-            }
-            else if (moveVec.y == 1 && shiftButtonHeld)
-            {
-                Run();
-            }
-            else if (moveVec.y == 0)
-            {
-                Idle();
-            }
+
+            moveSpeed = !shiftButtonHeld ? walkSpeed : runSpeed;
+
+            animationVelocity_X = !shiftButtonHeld ? InputMoveVec.x : InputMoveVec.x * RUN_ANIMATION_MODIFIER;
+            animationVelocity_Z = !shiftButtonHeld ? InputMoveVec.y : InputMoveVec.y * RUN_ANIMATION_MODIFIER;
+            _animator.SetFloat("VelocityX", animationVelocity_X, .05f, Time.deltaTime);
+            _animator.SetFloat("VelocityZ", animationVelocity_Z, .05f, Time.deltaTime);
 
             moveDirection *= moveSpeed;
-        }
-        else
-        {
-            moveDirection *= runSpeed;
 
-            Idle();
+            velocity.x = moveDirection.x;
+            velocity.z = moveDirection.z;
         }
 
         // characterController.Move(moveDirection * Time.deltaTime);
 
         velocity.y += gravity * Time.deltaTime;
-        velocity.x = moveDirection.x;
-        velocity.z = moveDirection.z;
         characterController.Move(velocity * Time.deltaTime);
     }
 
-    private void RunBackward()
+
+    private void Idle()
     {
-        _animator.SetFloat("Speed", 0f, .05f, Time.deltaTime);
-        moveSpeed = runSpeed;
+        _animator.SetFloat("Speed", .5f, .05f, Time.deltaTime);
+    }
+
+    private void WalkForward()
+    {
+        _animator.SetFloat("Speed", .75f, .05f, Time.deltaTime);
+        moveSpeed = walkSpeed;
     }
 
     private void WalkBackward()
@@ -254,23 +255,40 @@ public class PlayerController : MonoBehaviour
         moveSpeed = walkSpeed;
     }
 
-    private void Walk()
+    private void WalkRight()
     {
-        _animator.SetFloat("Speed", .75f, .05f, Time.deltaTime);
-        moveSpeed = walkSpeed;
+
     }
 
-    private void Idle()
+    private void WalkLeft()
     {
-        _animator.SetFloat("Speed", .5f, .05f, Time.deltaTime);
+
     }
 
-
-    private void Run()
+    private void RunForward()
     {
-        _animator.SetFloat("Speed", 1f, .05f, Time.deltaTime);
+        // _animator.SetFloat("Speed", 1f, .05f, Time.deltaTime);
+        _animator.SetFloat("Speed", 1f);
         moveSpeed = runSpeed;
     }
+
+    private void RunBackward()
+    {
+        // _animator.SetFloat("Speed", 0f, .05f, Time.deltaTime);
+        _animator.SetFloat("Speed", 0f);
+        moveSpeed = runSpeed;
+    }
+
+    private void RunRight()
+    {
+
+    }
+
+    private void RunLeft()
+    {
+
+    }
+
 
     private void Jump()
     {
@@ -297,17 +315,7 @@ public class PlayerController : MonoBehaviour
     private void Die()
     {
         isDied = true;
-        var isGameEnded = GameManager.Singleton.FinishRound();
-        if (isGameEnded)
-        {
-            UIController.Singleton.InitFinishDialog("You Lost", "Game over");
-        }
-        else
-        {
-            UIController.Singleton.InitFinishDialog("You Died, try again", "Retry");
-        }
         _animator.SetTrigger("Death");
-        Debug.Log("die");
     }
 
     private void Attack()
@@ -346,6 +354,7 @@ public class PlayerController : MonoBehaviour
     private void UpdateHealth()
     {
         healthSlider.value = health;
+        healthText.text = health.ToString();
     }
 
     private void AddScoreUI()
