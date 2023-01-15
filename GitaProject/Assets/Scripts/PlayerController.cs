@@ -9,7 +9,6 @@ using static UnityEngine.InputSystem.InputAction;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private PlayerWeaponController weapon;
     [Header("Variables")]
     [SerializeField] private Transform playerCenter;
 
@@ -41,7 +40,7 @@ public class PlayerController : MonoBehaviour
 
     #region References
 
-    private PaladinInputSystem playerInput;
+    private PlayerInput playerInput;
     private CharacterController characterController;
     private Rigidbody _rigidbody;
     private Animator _animator;
@@ -52,13 +51,11 @@ public class PlayerController : MonoBehaviour
     #region Variables
 
     private Vector2 InputMoveVec;
-    private Vector2 ModifiedMoveVec;
     private Vector2 cameraRotateVec;
     private Vector3 moveDirection;
     private Vector3 velocity;
     private int health;
     private int score;
-    private float prevShootTime = 0;
     private bool isDied = false;
     private bool shiftButtonHeld = false;
     private bool cameraShouldRotate = false;
@@ -70,7 +67,7 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        playerInput = new PaladinInputSystem();
+        playerInput = new PlayerInput();
         characterController = GetComponent<CharacterController>();
         _rigidbody = GetComponent<Rigidbody>();
         _animator = GetComponentInChildren<Animator>();
@@ -86,7 +83,6 @@ public class PlayerController : MonoBehaviour
         playerInput.Player.Look.performed += LookPerformed;
         playerInput.Player.Look.canceled += LookCanceled;
 
-        playerInput.Player.Fire.performed += AttackPerformed;
 
 
     }
@@ -148,19 +144,7 @@ public class PlayerController : MonoBehaviour
     {
         cameraShouldRotate = false;
     }
-    int count = 0;
-    private void AttackPerformed(CallbackContext value)
-    {
-        if (isDied) return;
-        var curTime = Time.time;
-        if (curTime - prevShootTime > attackSpeed)
-        {
-            Debug.Log(++count);
-            weapon.AttackStarted();
-            Attack();
-            prevShootTime = curTime;
-        }
-    }
+    
 
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -177,7 +161,6 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
 
-        Debug.Log(InputMoveVec);
         if (isDied) return;
         Move();
         CameraRotateWithMouse();
